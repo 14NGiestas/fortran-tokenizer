@@ -39,29 +39,38 @@ contains
         self % num_items = self % num_items + 1
     end subroutine
 
-    function get(self, idx)
+    function get(self, idx, info)
         class(token_list) :: self
         type(token_t) :: get
         integer, intent(in) :: idx
-        get = self % items(idx)
+        integer, optional :: info
+
+        if (assert(self % is_empty(), info)) then
+            get = self % items(idx)
+        end if
     end function
 
-    function pop(self)
+    function pop(self, info)
         class(token_list) :: self
         type(token_t) :: pop
+        integer, optional :: info
 
-        if (self % is_empty()) error stop
+        if (assert(self % is_empty(), info)) then
+            pop = self % peek(info)
 
-        pop = self % peek()
-        self % num_items = self % num_items - 1
-        self % items = self % items(:self % num_items)
+            self % num_items = self % num_items - 1
+            self % items = self % items(:self % num_items)
+        end if
     end function
 
-    function peek(self)
+    function peek(self, info)
         class(token_list) :: self
-        type(token_t), allocatable :: peek
-        if (self % is_empty()) error stop
-        peek = self % items(self % num_items)
+        type(token_t) :: peek
+        integer, optional :: info
+
+        if (assert(self % is_empty(), info)) then
+            peek = self % items(self % num_items)
+        end if
     end function
 
     logical function is_empty(self)
@@ -76,8 +85,27 @@ contains
 
     subroutine clear(self)
         class(token_list) :: self
-        deallocate(self % items)
+        if (allocated(self % items)) then
+            deallocate(self % items)
+            allocate(self % items(0))
+        end if
     end subroutine
+
+    logical function assert(condition, info)
+        logical, intent(in) :: condition
+        integer, optional :: info
+
+        assert = .true.
+        if (present(info)) then
+            info = 0
+            if (condition) then
+                info = -1
+                assert = .false.
+            end if
+        else
+            if (condition) error stop
+        end if
+    end function
 
     subroutine write(self, unit, iotype, v_list, iostat, iomsg)
         class(token_list), intent(in) :: self

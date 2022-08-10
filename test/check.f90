@@ -39,6 +39,28 @@ program check
         call assert(token % string == expected(i))
     end do
 
+
+    block
+        integer :: info
+
+        do i=1,size(tokens)
+            token % string = expected(i)
+            call tokens % append(token)
+        end do
+
+        token = tokens % peek()
+        call assert(token % string == expected(size(expected)))
+
+        do i=1,size(tokens)
+            token = tokens % pop(info)
+            call assert(info == 0)
+        end do
+
+        token = tokens % pop(info)
+        call assert(info == -1)
+
+        token = tokens % pop()
+    end block
 contains
 
     subroutine assert(test)
