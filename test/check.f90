@@ -58,8 +58,6 @@ program check
 
         token = tokens % pop(info)
         call assert(info == -1)
-
-        token = tokens % pop()
     end block
 contains
 
