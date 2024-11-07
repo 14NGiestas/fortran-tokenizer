@@ -7,8 +7,6 @@ program check
     character(:), allocatable :: expected(:)
     integer :: i
 
-    tok % validate_token => by_whitespace
-
     expected = ["hello", &
                 "i    ", &
                 "am   ", &
@@ -21,18 +19,16 @@ program check
         call assert(token % string == expected(i))
     end do
 
-    tok % validate_token => by_expression
-
     expected = ["(", "1", "+", "2", ")", "/", "2"]
 
-    tokens = tok % tokenize(" (1 + 2) /2")
+    tokens = tok % tokenize(" (1 + 2) /2", by_expression)
     call assert(size(tokens) == 7)
     do i=1,size(tokens)
         token = tokens % get(i)
         call assert(token % string == expected(i))
     end do
 
-    tokens = tok % tokenize("(1+2)/2")
+    tokens = tok % tokenize("(1+2)/2", by_expression)
     call assert(size(tokens) == 7)
     do i=1,size(tokens)
         token = tokens % get(i)
@@ -61,8 +57,8 @@ program check
     end block
 contains
 
-    subroutine assert(test)
-        logical :: test
+    elemental subroutine assert(test)
+        logical, intent(in) :: test
         if (.not. test) error stop
     end subroutine
 
@@ -74,8 +70,7 @@ contains
 
     logical function by_expression(token)
         character(*), intent(in) :: token
-        by_expression = by_whitespace(token)
-        by_expression = by_expression &
+        by_expression = by_whitespace(token) &
         .and. any(token == [ &
             "(", ")",           &
             "/", "+", "-", "*", &

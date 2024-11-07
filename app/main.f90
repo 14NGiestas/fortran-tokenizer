@@ -4,17 +4,17 @@ program main
     type(tokenizer_t) :: tok
     type(token_list) :: tokens
 
-    tok % validate_token => by_whitespace
-
-    tokens = tok % tokenize("  hello  i am a robot")
-    print*, tokens
-
-    tok % validate_token => by_expression
+    ! Bind a global validator to reuse the same function multiple times
+    tok % validator => by_expression
 
     tokens = tok % tokenize(" (1 + 2) /2")
     print*, tokens
 
     tokens = tok % tokenize(" (1 + 2) /2    ")
+    print*, tokens
+
+    ! You can use a local validator that will be used instead the global
+    tokens = tok % tokenize("  hello  i am a robot", by_whitespace)
     print*, tokens
 
 contains
