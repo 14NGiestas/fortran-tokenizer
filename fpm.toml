@@ -1,9 +1,9 @@
 name = "fortran-tokenizer"
-version = "0.1.0"
+version = "0.1.1"
 license = "MIT"
 author = "14NGiestas"
 maintainer = "iangiestaspauli@gmail.com"
-copyright = "Copyright 2022, 14NGiestas"
+copyright = "Copyright 2024, 14NGiestas"
 [build]
 auto-executables = true
 auto-tests = true

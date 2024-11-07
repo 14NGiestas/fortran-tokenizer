@@ -5,9 +5,16 @@ module tokenizer_token_list
 
     public :: token_t
 
+    type :: item_t
+        type(token_t), pointer :: content
+        type(item_t), pointer :: next => null()
+        type(item_t), pointer :: prev => null()
+    end type
+
     type, public :: token_list
-        type(token_t), allocatable :: items(:)
-        integer, private :: num_items = 0
+        type(item_t), pointer :: head => null()
+        type(item_t), pointer :: tail => null()
+        integer, private :: size = 0
     contains
         procedure :: get
         procedure :: pop
@@ -29,14 +36,23 @@ contains
     subroutine append(self, item)
         class(token_list) :: self
         type(token_t) :: item
+        type(item_t), pointer :: new
 
-        if (.not. allocated(self % items)) then
-            self % items = [ item ]
-        else
-            self % items = [ self % items, item ]
+        if (self % size == 0) then
+            allocate(self % head)
+            allocate(self % head % content, source=item)
+            self % tail => self % head
+            self % size = self % size + 1
+            return
         end if
 
-        self % num_items = self % num_items + 1
+        allocate(self % tail % next)
+        new => self % tail % next
+        allocate(new % content, source=item)
+        new % next => null()
+        new % prev => self % tail
+        self % tail => new
+        self % size = self % size + 1
     end subroutine
 
     function get(self, idx, info)
@@ -44,9 +60,18 @@ contains
         type(token_t) :: get
         integer, intent(in) :: idx
         integer, optional :: info
+        type(item_t), pointer :: it
+        integer :: i
 
         if (assert(self % is_empty(), info)) then
-            get = self % items(idx)
+            it => self % head
+            do i=1,self % size
+                if (i == idx) then
+                    get = it % content
+                    return
+                end if
+                it => it % next
+            end do
         end if
     end function
 
@@ -54,12 +79,14 @@ contains
         class(token_list) :: self
         type(token_t) :: pop
         integer, optional :: info
+        type(item_t), pointer :: new_tail
 
         if (assert(self % is_empty(), info)) then
             pop = self % peek(info)
-
-            self % num_items = self % num_items - 1
-            self % items = self % items(:self % num_items)
+            new_tail => self % tail % prev
+            deallocate(self % tail)
+            self % tail => new_tail
+            self % size = self % size - 1
         end if
     end function
 
@@ -69,26 +96,31 @@ contains
         integer, optional :: info
 
         if (assert(self % is_empty(), info)) then
-            peek = self % items(self % num_items)
+            peek = self % tail % content
         end if
     end function
 
     logical function is_empty(self)
         class(token_list) :: self
-        is_empty = self % num_items == 0
+        is_empty = self % size == 0
     end function
 
     integer function list_size(self)
         type(token_list) :: self
-        list_size = self % num_items
+        list_size = self % size
     end function
 
     subroutine clear(self)
         class(token_list) :: self
-        if (allocated(self % items)) then
-            deallocate(self % items)
-            allocate(self % items(0))
-        end if
+        integer :: i
+        type(item_t), pointer :: it
+        it => self % head
+        do i=1,self % size
+            it => it % next
+            deallocate(it % prev)
+            nullify(it % prev)
+        end do
+        nullify(it)
     end subroutine
 
     logical function assert(condition, info)
@@ -115,15 +147,18 @@ contains
         integer, intent(out) :: iostat
         character(*), intent(inout) :: iomsg
         integer :: i
-
+        type(item_t), pointer :: it
+        it => self % head
         write(unit,'("[")')
         if (size(self) > 0) then
-            do i=1,size(self)-1
-                write(unit,'(DT,", ")') self % items(i)
+            do i=1,self % size - 1
+                write(unit,'(DT,", ")') it % content
+                it => it % next
             end do
 
-            write(unit,'(DT)') self % items(i)
+            write(unit,'(DT)') it % content
         end if
         write(unit,'("]")')
+        nullify(it)
     end subroutine
 end module
