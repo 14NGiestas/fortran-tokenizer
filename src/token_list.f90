@@ -112,15 +112,22 @@ contains
 
     subroutine clear(self)
         class(token_list) :: self
-        integer :: i
-        type(item_t), pointer :: it
-        it => self % head
-        do i=1,self % size
-            it => it % next
-            deallocate(it % prev)
-            nullify(it % prev)
+        type(item_t), pointer :: curr, next_item
+
+        curr => self % head
+        do while (associated(curr))
+            next_item => curr % next
+            if (associated(curr % content)) then
+                deallocate(curr % content)
+            end if
+            deallocate(curr)
+            curr => next_item
         end do
-        nullify(it)
+
+        ! Reset the list state.
+        self % head => null()
+        self % tail => null()
+        self % size = 0
     end subroutine
 
     logical function assert(condition, info)
