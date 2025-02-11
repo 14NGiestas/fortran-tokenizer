@@ -1,4 +1,5 @@
 module tokenizer_token_type
+    use iso_fortran_env, only: real64, int64
     implicit none
     private
 
@@ -18,26 +19,43 @@ contains
         class(token_t), intent(in) :: self
         integer, intent(in) :: unit
         character(*), intent(in) :: iotype
-        integer, intent(in)  :: v_list(:)
+        integer, intent(in) :: v_list(:)
         integer, intent(out) :: iostat
         character(*), intent(inout) :: iomsg
 
+        ! Produce the formatted output.
+        write(unit, '(A)', iostat=iostat) '[ token_t '
+
+        ! Build a representation for the token's object if it is allocated.
         if (allocated(self % object)) then
             select type(it => self % object)
             type is (character(*))
-                write(unit,'("''",g0,"''")') it
+                write(unit,'(A)') "'" // trim(it) // "'"
             type is (real)
-                write(unit,'(g0)') it
+                write(unit, '(G0)') it
             type is (complex)
-                write(unit,'(g0)') it
+                write(unit, '(G0)') it
             type is (integer)
-                write(unit,'(g0)') it
+                write(unit, '(I0)') it
+            type is (real(real64))
+                write(unit, '(G0)') it
+            type is (complex(real64))
+                write(unit, '(G0)') it
+            type is (integer(int64))
+                write(unit, '(I0)') it
             class default
                 write(unit,'("[DERIVED TYPE ",I0,"]")') sizeof(it)
             end select
         else
-            write(unit,'("''",g0,"''")') self % string
+          if (allocated(self % type)) then
+              write(unit, '(A)') trim(self % type)
+              write(unit, '(" ")')
+          end if
+          if (allocated(self % string)) then
+              write(unit, '(A)') "'"//trim(self % string)//"'"
+          end if
         end if
+        write(unit, '(A)') ' ]'
     end subroutine
 
 end module
